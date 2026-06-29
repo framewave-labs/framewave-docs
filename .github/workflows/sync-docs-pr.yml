@@ -1,0 +1,88 @@
+name: Sync source docs as PR
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout integrated docs repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: site
+
+      - name: Checkout scy docs
+        uses: actions/checkout@v4
+        with:
+          repository: framewave-labs/scy
+          path: site/_sources/scy
+          token: ${{ secrets.DOCS_PAT || github.token }}
+
+      - name: Checkout lsg docs
+        uses: actions/checkout@v4
+        with:
+          repository: framewave-labs/lsg
+          path: site/_sources/lsg
+          token: ${{ secrets.DOCS_PAT || github.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: site
+        run: npm ci
+
+      - name: Collect source docs
+        working-directory: site
+        run: node scripts/collect-docs.mjs
+
+      - name: Generate integrated summaries
+        working-directory: site
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5.5' }}
+        run: node scripts/generate-summary.mjs
+
+      - name: Create or update sync pull request
+        working-directory: site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: summary/update-integrated-docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content
+          if git diff --cached --quiet; then
+            echo "No generated docs changed."
+            exit 0
+          fi
+
+          git switch -c "$BRANCH_NAME"
+          git commit -m "summary: update integrated docs"
+          git push --force-with-lease origin "$BRANCH_NAME"
+
+          if gh pr view "$BRANCH_NAME" --json number --jq .number >/dev/null 2>&1; then
+            gh pr edit "$BRANCH_NAME" \
+              --title "summary: update integrated docs" \
+              --body "자동 수집된 개인 문서와 통합 요약을 갱신합니다."
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --title "summary: update integrated docs" \
+              --body "자동 수집된 개인 문서와 통합 요약을 갱신합니다."
+          fi
+
