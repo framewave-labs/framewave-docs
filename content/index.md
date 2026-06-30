@@ -15,6 +15,7 @@ summary_target: false
 ## 바로가기
 
 - [[00_통합요약/index|통합 요약]]
+- [[00_통합요약/2026-06-30_A2팀_통합_PRD|A2팀 통합 PRD]]
 - [[members/index|멤버별 문서]]
 
 ## 운영 방식
@@ -27,4 +28,3 @@ lsg/content -> framewave-docs/content/members/lsg
 ```
 
 원본을 수정해야 할 때는 이 저장소가 아니라 각 개인 저장소에서 수정합니다.
-
