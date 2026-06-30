@@ -29,7 +29,9 @@ scripts/
 └─ generate-summary.mjs
 
 .github/workflows/
-└─ sync-and-deploy.yml
+├─ sync-docs-pr.yml
+├─ deploy-pages.yml
+└─ validate-pr.yml
 ```
 
 ## 운영 원칙
@@ -75,3 +77,5 @@ OPENAI_API_KEY
 ```
 
 `DOCS_PAT`는 `scy`, `lsg`를 읽을 수 있는 토큰입니다. 공개 저장소만 사용한다면 필요하지 않을 수 있습니다.
+
+상세 설정은 [2026-06-30_framewave-docs_설정가이드.md](docs/2026-06-30_framewave-docs_설정가이드.md)를 따릅니다.
